@@ -45,7 +45,7 @@ def _format(output):
         lines = [' | '.join(hdr), '-'*40]
         for r in rows[:20]: lines.append(' | '.join(str(r.get(h,'')) for h in hdr))
         suffix = '' if len(rows)<=20 else f'\n... and {len(rows)-20} more'
-        return f'Matched {len(rows)} row(s):\n```\n' + '\n'.join(lines) + '\n```' + suffix
+        return 'Matched ' + str(len(rows)) + ' row(s):\n' + '\n'.join(lines) + suffix
     return str(output)
 
 def run_demo(pipeline):
@@ -71,7 +71,7 @@ def run_telegram(pipeline):
 
     async def handle(update, _ctx):
         reply = await asyncio.to_thread(pipeline.answer, update.message.text or '')
-        await update.message.reply_text(reply, parse_mode='Markdown')
+        await update.message.reply_text(reply)
 
     app = ApplicationBuilder().token(pipeline.cfg.telegram_token).build()
     app.add_handler(CommandHandler('start', start))
