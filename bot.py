@@ -1,4 +1,4 @@
-import asyncio, logging, sys, time
+import logging, sys, time
 from config import Config
 from query_parser import QueryParser
 from sheets_handler import SheetsHandler
@@ -60,24 +60,29 @@ def run_demo(pipeline):
     ]:
         print(f'Q: {q}\n{pipeline.answer(q)}\n' + '-'*60)
 
-async def run_telegram(pipeline):
+def run_telegram(pipeline):
+    import asyncio
     from telegram import Update
     from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
+
     async def start(update, _ctx):
         cols, _ = pipeline.sheets.schema()
         await update.message.reply_text(f'Hi! Ask me about the sheet.\nColumns: {", ".join(cols)}')
+
     async def handle(update, _ctx):
         reply = await asyncio.to_thread(pipeline.answer, update.message.text or '')
         await update.message.reply_text(reply, parse_mode='Markdown')
+
     app = ApplicationBuilder().token(pipeline.cfg.telegram_token).build()
     app.add_handler(CommandHandler('start', start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle))
-    await app.run_polling()
+    log.info('Telegram bot starting (mock=%s)', pipeline.cfg.mock_mode)
+    app.run_polling()
 
 def main():
     cfg = Config.load(); pipeline = QueryPipeline(cfg)
     if '--demo' in sys.argv: run_demo(pipeline); return
     if not cfg.telegram_token: log.warning('No token — demo mode'); run_demo(pipeline); return
-    asyncio.run(run_telegram(pipeline))
+    run_telegram(pipeline)
 
 if __name__ == '__main__': main()
